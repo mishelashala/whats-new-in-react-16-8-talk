@@ -1,0 +1,9 @@
+.profile-form {
+  box-sizing: border-box;
+  padding: 1rem;
+}
+.profile-loading {
+  box-sizing: border-box;
+  padding: 1rem;
+  margin: 0;
+}

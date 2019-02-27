@@ -1,28 +1,26 @@
-import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { UserServiceContext } from "./providers";
+import { UserService } from "./services";
+import { Profile } from "./routes/Profile";
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.tsx</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
-  }
-}
+const App = () => {
+  return (
+    <UserServiceContext.Provider value={UserService}>
+      <UserServiceContext.Consumer>
+        {userService => (
+          <Router>
+            <Switch>
+              <Route
+                path="/"
+                component={() => <Profile userService={userService} />}
+              />
+            </Switch>
+          </Router>
+        )}
+      </UserServiceContext.Consumer>
+    </UserServiceContext.Provider>
+  );
+};
 
 export default App;
