@@ -1,122 +1,123 @@
 import React from "react";
-import { IProfile, IUserService } from "../../models";
+import { UserServiceContext } from "../../providers";
 import { If } from "../../modules";
 
-interface IUserDataFormProps {
-  userService: IUserService;
-}
+const noop = () => {};
 
-interface IUserDataFormState {
-  data: IProfile;
-  isSaving: boolean;
-  isLoading: boolean;
-}
-
-export class UserDataForm extends React.Component<
-  IUserDataFormProps,
-  IUserDataFormState
-> {
-  state = {
-    data: {
-      firstName: "",
-      lastName: ""
-    },
-    isSaving: false,
-    isLoading: true
+interface IUserState {
+  data: {
+    firstName: string;
+    lastName: string;
   };
+}
 
-  async componentDidMount() {
-    const data = await this.props.userService.getProfileData();
-    this.setState({
-      data,
-      isLoading: false
+const userState = (): IUserState => ({
+  data: {
+    firstName: "",
+    lastName: ""
+  }
+});
+
+const user = (state: IUserState = userState(), action: any): IUserState => {
+  switch (action.type) {
+    case "my-app/USER_FORM/UPDATE_FIRST_NAME":
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          firstName: action.payload.firstName
+        }
+      };
+
+    case "my-app/USER_FORM/UPDATE_LAST_NAME":
+      return {
+        ...state,
+        data: {
+          ...state.data,
+          lastName: action.payload.lastName
+        }
+      };
+
+    case "my-app/USER_FORM/LOAD_DATA":
+      return {
+        ...state,
+        data: action.payload
+      };
+
+    default:
+      return state;
+  }
+};
+
+export const UserDataForm: React.FC = () => {
+  const userService = React.useContext(UserServiceContext);
+
+  const [state, dispatch] = React.useReducer(user, userState());
+
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [isSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    userService.getProfileData().then(data => {
+      dispatch({
+        type: "my-app/USER_FORM/LOAD_DATA",
+        payload: data
+      });
+      setIsLoading(false);
     });
-  }
+  });
 
-  handleChangeFirstName = ({ target: { value } }: any): void => {
-    this.setState(prevState => ({
-      data: {
-        ...prevState.data,
-        firstName: value
-      }
-    }));
-  };
+  return (
+    <React.Fragment>
+      <If predicate={isLoading}>
+        <p className="profile-loading">Loading</p>
+      </If>
 
-  handleChangeLastName = ({ target: { value } }: any): void => {
-    this.setState(prevState => ({
-      data: {
-        ...prevState.data,
-        lastName: value
-      }
-    }));
-  };
-
-  handleClickSave = async () => {
-    if (this.state.isSaving) {
-      return;
-    }
-
-    this.setState(prevState => ({
-      ...prevState,
-      isSaving: true
-    }));
-
-    const data = await this.props.userService.updateProfileData(
-      this.state.data
-    );
-
-    this.setState(prevState => ({
-      ...prevState,
-      isSaving: false,
-      data
-    }));
-  };
-
-  render() {
-    return (
-      <React.Fragment>
-        <If predicate={this.state.isLoading}>
-          <p className="profile-loading">Loading</p>
-        </If>
-
-        <If predicate={!this.state.isLoading}>
-          <form className="row profile-form">
-            <div className="columns small-12">
-              <label>First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                onChange={this.handleChangeFirstName}
-                value={this.state.data.firstName}
-                disabled={this.state.isSaving}
-              />
-            </div>
-            <div className="columns small-12">
-              <label>Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                onChange={this.handleChangeLastName}
-                value={this.state.data.lastName}
-                disabled={this.state.isSaving}
-              />
-            </div>
-            <div className="columns small-12">
-              <button
-                type="button"
-                className={
-                  this.state.isSaving
-                    ? "button expanded disabled"
-                    : "button expanded"
-                }
-                onClick={this.handleClickSave}
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </If>
-      </React.Fragment>
-    );
-  }
-}
+      <If predicate={!isLoading}>
+        <form className="row profile-form">
+          <div className="columns small-12">
+            <label>First Name</label>
+            <input
+              type="text"
+              name="firstName"
+              onChange={({ target: { value } }) =>
+                dispatch({
+                  type: "my-app/USER_FORM/UPDATE_FIRST_NAME",
+                  payload: { firstName: value }
+                })
+              }
+              value={state.data.firstName}
+              disabled={isSaving}
+            />
+          </div>
+          <div className="columns small-12">
+            <label>Last Name</label>
+            <input
+              type="text"
+              name="lastName"
+              onChange={({ target: { value } }) =>
+                dispatch({
+                  type: "my-app/USER_FORM/UPDATE_LAST_NAME",
+                  payload: { lastName: value }
+                })
+              }
+              value={state.data.lastName}
+              disabled={isSaving}
+            />
+          </div>
+          <div className="columns small-12">
+            <button
+              type="button"
+              className={
+                isSaving ? "button expanded disabled" : "button expanded"
+              }
+              onClick={noop}
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </If>
+    </React.Fragment>
+  );
+};
